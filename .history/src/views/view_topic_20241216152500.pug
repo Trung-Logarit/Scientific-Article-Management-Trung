@@ -1,0 +1,148 @@
+extends index  
+
+block content
+    .col-lg-12
+        .row
+            .col-md-12
+                .callout.callout-info
+                    .col-md-12
+                        .row
+                            .col-sm-6
+                                dl
+                                    dt
+                                        b.border-bottom.border-primary Tên đề tài
+                                    dd= data.TenDeTai
+                                    dt
+                                        b.border-bottom.border-primary Miêu tả
+                                    dd= data.MoTa
+                                    if data.NhanXet 
+                                        dt
+                                            b.border-bottom.border-primary Nhận xét
+                                        dd= data.NhanXet
+                            .col-md-6
+                                if data.TrangThai=="Hoàn thành"
+                                    dl
+                                        dt
+                                            b.border-bottom.border-primary Điểm
+                                        dd= data.Diem
+                                dl
+                                    dt
+                                        b.border-bottom.border-primary Ngày bắt đầu
+                                    -if(data.NgayThucHien)
+                                        dd= data.NgayThucHien.toLocaleDateString()
+                                dl
+                                    dt
+                                        b.border-bottom.border-primary Ngày kết thúc
+                                    -if(data.NgayKetThuc)
+                                        dd= data.NgayKetThuc.toLocaleDateString()
+                                dl
+                                    -if(1)
+                                        -if(data.TrangThai=="hoàn thành" || data.TrangThai=="hủy")
+                                            td
+                                                b.border-bottom.border-primary Thời gian còn lại
+                                                dd= "0 ngày"
+                                            dt
+                                                b.border-bottom.border-primary Trạng thái
+                                                dd= data.TrangThai    
+                                        -else
+                                            td
+                                                b.border-bottom.border-primary Thời gian còn lại
+                                                dd= Math.round((data.NgayKetThuc-new Date().getTime())/(1000*60*60*24)) + " ngày"
+                                            -if(data.NgayKetThuc && new Date(data.NgayKetThuc).getTime() > new Date().getTime())
+                                                dt
+                                                    b.border-bottom.border-primary Trạng thái
+                                                    dd= data.TrangThai
+                                            -else
+                                                dt
+                                                    b.border-bottom.border-primary Trạng thái
+                                                    dd
+                                                        span.class-color Quá hạn
+
+                        .col-lg-12.text-right.justify-content-center.d-flex
+                            button.btn.btn-primary.mr-2(type="button", id='showFile') Xem báo cáo
+                            if user.role =="giang_vien" & data.TrangThai=="đang nghiệm thu"
+                                button.btn.btn-primary.mr-2(type="button", id="showFormButton") Nghiệm thu
+                            td.text-center
+                                button.btn.btn-default.btn-sm.btn-flat.border-info.wave-effect.text-info.dropdown-toggle(type="button", data-toggle="dropdown", aria-expanded="true").  
+                                    Action
+                                .dropdown-menu
+                                    button.dropdown-item.view_task(href="javascript:void(0)") Chỉnh sửa
+                                    .dropdown-divider
+                                    button.dropdown-item.edit_task(href="javascript:void(0)") Xoá
+                                    .dropdown-divider
+        .row
+            .col-md-4
+                .card.card-outline(style="min-height:129.67px").card-primary
+                    .card-header
+                        dt
+                            b.border-bottom.border-primary Quản lí dự án                                  
+                        dd 
+                            .d-flex.align-items-center.mt-1                                      
+                                img.img-circle.img-thumbnail.p-0.shadow-sm.border-info.img-sm.mr-3(src=`/img/users/${data.GiangVien.avatar}`, alt="Avatar")
+                                b= data.GiangVien.name 
+                    .card-header
+                        span 
+                            b Thành viên nhóm:
+                            .card-tools
+                    .card-body                        
+                        ul.clearfix 
+                            each ThanhVien in data.ThanhVien                      
+                                li= ThanhVien.name
+
+            // Thêm phần hiển thị file báo cáo
+            if data.file
+                .col-md-8
+                    .card.card-outline.card-primary
+                        iframe(
+                            src=`/files/${data.file}`,
+                            style="width: 100%; height: 700px; border: none;"
+                        )
+                        .card-footer.text-right
+                            a.btn.btn-info(href=`/files/${data.file}`, target="_blank") Tải về báo cáo
+
+    style.
+        .center-button {
+        margin: 0 10px;
+        text-align: center;
+        }
+        
+        .users-list>li img {
+            border-radius: 50%;
+            height: 67px;
+            width: 67px;
+            object-fit: cover;
+        }
+        .users-list>li {
+            width: 33.33% !important
+        }
+        .truncate {
+            -webkit-line-clamp:1 !important;
+        }
+    script.
+        var data = !{JSON.stringify(data)};
+        document.getElementById('showFile').addEventListener('click', function() {
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+        function nop_de_tai(topic) {
+            const files = document.getElementById(`file_de_tai`);
+            const formData = new FormData();
+            if (files.files[0]) {
+                formData.append("files", files.files[0]);
+                formData.append("TrangThai", "phân công nghiệm thu");
+            } else {
+                alert("Chưa chọn file");
+                return;
+            }
+            axios
+                .patch(`/api/v1/topics/${topic}`, formData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                })
+                .then(() => {
+                    alert("Thành công");
+                    window.location.href = `/topic/${topic}`;
+                })
+                .catch((error) => {
+                    alert("Thất bại");
+                    console.error("Error updating topic:", error);
+                });
+        }
